@@ -205,7 +205,7 @@ with st.sidebar.expander("💡 Quick Help Guide", expanded=False):
 
 # Gene selection with search
 st.sidebar.markdown("### 🧬 **Gene Selection**")
-default_gene = "RB1" if "RB1" in genes_list else genes_list[0]
+default_gene = "CCND1" if "CCND1" in genes_list else genes_list[0]
 gene = st.sidebar.selectbox(
     "Choose your target gene:",
     genes_list, 
@@ -219,7 +219,8 @@ gene_info = {
     "TP53": "The Guardian of the Genome, tumor suppressor",
     "BRCA1": "Breast cancer susceptibility gene 1",
     "EGFR": "Epidermal growth factor receptor, oncogene",
-    "MYC": "Proto-oncogene, transcription factor"
+    "MYC": "Proto-oncogene, transcription factor",
+    "CCND1": "Cyclin D1, cell cycle regulation, oncogene"
 }
 if gene in gene_info:
     st.sidebar.info(f"ℹ️ {gene}: {gene_info[gene]}")
@@ -239,13 +240,13 @@ st.sidebar.markdown("*Adjust these values to control search stringency*")
 
 log2fc_thresh = st.sidebar.slider(
     "🎯 Fold Change Threshold (θ)", 
-    0.2, 3.0, 1.0, 0.1,
+    0.2, 3.0, 2.0, 0.1,
     help="Minimum fold-change magnitude (2^θ fold change). Higher = stronger effect required."
 )
 
 pval_thresh = st.sidebar.slider(
     "📊 Significance Threshold (τ)", 
-    0.0, 0.20, 0.15, 0.005,
+    0.0, 0.20, 0.05, 0.005,
     format="%.3f",
     help="Maximum p-value for statistical significance. Lower = more confident results."
 )
