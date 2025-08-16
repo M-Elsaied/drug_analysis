@@ -453,7 +453,7 @@ else:
         
         ax.set_xlabel("Cancer Cell Line", fontsize=12, fontweight='bold')
         ax.set_ylabel("Drug Compound", fontsize=12, fontweight='bold')
-        ax.set_title(f"🧬 {gene} Expression Changes | {direction} Effects\n(Gray = non-significant, p > {pval_thresh})", 
+        ax.set_title(f"{gene} Expression Changes | {direction} Effects\n(Gray = non-significant, p > {pval_thresh})", 
                     fontsize=14, fontweight='bold', pad=20)
         
         # Rotate labels for better readability
