@@ -45,4 +45,4 @@ output_zips/
 
 # Temporary files
 *.tmp
-*.temp
+*.temp.claude.md
