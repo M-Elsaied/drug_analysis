@@ -88,10 +88,19 @@ L1000 Data → Hugging Face Hub → DuckDB Remote Queries → Real-time Results
 - **Smart Caching**: Streamlit's @st.cache_data for instant reloads
 - **Scalable Architecture**: Handles concurrent users without crashes
 
-### **Key Files**
-- `drug_target_finder.py` - Main Streamlit application with DuckDB integration
-- `requirements.txt` - Python dependencies (includes duckdb)
-- `.claude.md` - Development documentation
+### **Project Structure**
+```
+drug_analysis/
+├── drug_target_finder.py    # Main Streamlit application
+├── requirements.txt         # Python dependencies  
+├── LICENSE                  # MIT License
+├── data/                   # Data files (gitignored)
+│   └── real_l1000_data.parquet
+├── scripts/                # Development utilities
+│   ├── convert_to_parquet.py
+│   └── transform_real_data.py
+└── archive/                # Test/demo files (gitignored)
+```
 
 ### **Remote Data Source**
 - **Hugging Face Hub**: [melsaied1/drug-finder](https://huggingface.co/datasets/melsaied1/drug-finder)

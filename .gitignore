@@ -37,8 +37,8 @@ ENV/
 Thumbs.db
 
 # Data files (keep Parquet, exclude large CSV)
-real_l1000_data.csv
-test_output.csv
+data/real_l1000_data.csv
+archive/
 
 # Output directories
 output_zips/
