@@ -9,6 +9,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import duckdb
 from functools import lru_cache
 
 st.set_page_config(
@@ -45,15 +46,20 @@ with st.expander("🎯 What does this tool do?", expanded=False):
     **Perfect for:** Drug repurposing, biomarker discovery, hypothesis generation, and understanding drug mechanisms.
     """)
 
+@st.cache_resource
+def get_duckdb_connection():
+    """Initialize DuckDB connection - cached as a resource"""
+    return duckdb.connect()
+
 @st.cache_data(show_spinner=False)
-def load_data_parquet(parquet_path: str):
-    """Load data from optimized Parquet format - much faster than CSV!"""
+def get_dataset_info():
+    """Get basic dataset information using DuckDB"""
     
     # Create a progress container for better UX
     progress_container = st.container()
     
     with progress_container:
-        st.markdown("### 🚀 Loading DrugTargetFinder Database")
+        st.markdown("### 🚀 Connecting to DrugTargetFinder Database")
         
         # Create columns for a nice layout
         col1, col2, col3 = st.columns([1, 2, 1])
@@ -65,10 +71,10 @@ def load_data_parquet(parquet_path: str):
             
             # Fun facts during loading
             facts = [
-                "📊 Processing 15.9 million drug-gene interactions...",
-                "🧬 Analyzing 978 genes across 62 cancer cell lines...",
-                "💊 Evaluating 2,650 unique drug compounds...",
-                "⚡ Optimized Parquet format loads 5x faster than CSV!",
+                "🌐 Connecting to Hugging Face Hub dataset...",
+                "🧬 Querying 978 genes across 62 cancer cell lines...",
+                "💊 Accessing 2,650 unique drug compounds...",
+                "⚡ DuckDB enables zero-memory loading!",
                 "🔬 Data sourced from L1000 connectivity map project..."
             ]
             
@@ -76,100 +82,119 @@ def load_data_parquet(parquet_path: str):
             for i, fact in enumerate(facts):
                 progress_bar.progress((i + 1) * 20)
                 status_text.markdown(f"**{fact}**")
-                time.sleep(0.3)  # Brief pause for effect
+                time.sleep(0.2)  # Brief pause for effect
             
-            status_text.markdown("**✅ Loading complete! Ready for drug discovery...**")
+            status_text.markdown("**✅ Connection established! Ready for drug discovery...**")
             progress_bar.progress(100)
             
-            # Actually load the data
-            df = pd.read_parquet(parquet_path)
+            # Get dataset statistics using DuckDB
+            conn = get_duckdb_connection()
+            
+            # URL to the Hugging Face dataset
+            data_url = "https://huggingface.co/datasets/melsaied1/drug-finder/resolve/main/real_l1000_data.parquet"
+            
+            # Get basic stats
+            stats_query = f"""
+            SELECT 
+                COUNT(*) as total_records,
+                COUNT(DISTINCT gene_symbol) as unique_genes,
+                COUNT(DISTINCT drug_id) as unique_drugs,
+                COUNT(DISTINCT cell_line) as unique_cell_lines
+            FROM '{data_url}'
+            """
+            
+            stats = conn.execute(stats_query).fetchone()
+            
+            # Get gene list
+            genes_query = f"""
+            SELECT DISTINCT gene_symbol 
+            FROM '{data_url}' 
+            ORDER BY gene_symbol
+            """
+            
+            genes_result = conn.execute(genes_query).fetchall()
+            genes_list = [row[0] for row in genes_result]
             
             # Clear progress indicators after a moment
-            time.sleep(0.5)
+            time.sleep(0.3)
             progress_container.empty()
     
-    # Verify required columns exist
-    required_cols = ["drug_id","cell_line","gene_symbol","log2fc","pvalue"]
-    missing = set(required_cols) - set(df.columns)
-    if missing:
-        raise ValueError(f"Parquet missing columns: {missing}")
-    
-    return df
-
-@st.cache_data(show_spinner=False)  
-def load_data_csv_fallback(csv_path: str):
-    """Fallback CSV loader if Parquet file not found"""
-    # Memory-optimized loading with chunking and efficient dtypes
-    required_cols = ["drug_id","cell_line","gene_symbol","log2fc","pvalue"]
-    
-    # Define optimal data types upfront
-    dtype_dict = {
-        'drug_id': 'category',
-        'cell_line': 'category', 
-        'gene_symbol': 'category',
-        'log2fc': 'float32',  # Half the memory of float64
-        'pvalue': 'float32'
+    return {
+        'total_records': stats[0],
+        'unique_genes': stats[1], 
+        'unique_drugs': stats[2],
+        'unique_cell_lines': stats[3],
+        'genes_list': genes_list
     }
-    
-    # Load in chunks to prevent memory overflow
-    chunk_size = 250000  # Adjust based on your available RAM
-    chunks = []
-    
-    with st.spinner("Loading CSV data (this may take a while)..."):
-        try:
-            # Read only required columns
-            for chunk in pd.read_csv(csv_path, chunksize=chunk_size, usecols=required_cols, dtype=dtype_dict):
-                # Drop invalid rows early in each chunk
-                chunk = chunk.dropna(subset=["log2fc","pvalue"])
-                chunks.append(chunk)
-            
-            df = pd.concat(chunks, ignore_index=True)
-            
-        except Exception as e:
-            # Fallback: try loading without chunking
-            st.warning("Chunked loading failed, trying direct load...")
-            df = pd.read_csv(csv_path, usecols=required_cols, dtype=dtype_dict)
-            df = df.dropna(subset=["log2fc","pvalue"])
-    
-    # Verify required columns exist
-    missing = set(required_cols) - set(df.columns)
-    if missing:
-        raise ValueError(f"CSV missing columns: {missing}")
-    
-    return df
 
-# Path to real L1000 data Parquet (optimized format)
-DATA_PATH = "real_l1000_data.parquet"
+@st.cache_data(show_spinner=False)
+def query_gene_data(gene: str, selected_cell_lines=None):
+    """Query data for specific gene using DuckDB - memory efficient"""
+    conn = get_duckdb_connection()
+    
+    # URL to the Hugging Face dataset
+    data_url = "https://huggingface.co/datasets/melsaied1/drug-finder/resolve/main/real_l1000_data.parquet"
+    
+    # Build WHERE clause
+    where_conditions = [f"gene_symbol = '{gene}'"]
+    
+    if selected_cell_lines:
+        cell_lines_str = "', '".join(selected_cell_lines)
+        where_conditions.append(f"cell_line IN ('{cell_lines_str}')")
+    
+    where_clause = " AND ".join(where_conditions)
+    
+    # Query specific gene data
+    query = f"""
+    SELECT drug_id, cell_line, gene_symbol, log2fc, pvalue
+    FROM '{data_url}'
+    WHERE {where_clause}
+    ORDER BY drug_id, cell_line
+    """
+    
+    # Execute query and return as DataFrame
+    result = conn.execute(query).fetchdf()
+    
+    return result
 
+@st.cache_data(show_spinner=False)
+def get_cell_lines():
+    """Get list of all cell lines"""
+    conn = get_duckdb_connection()
+    
+    data_url = "https://huggingface.co/datasets/melsaied1/drug-finder/resolve/main/real_l1000_data.parquet"
+    
+    query = f"""
+    SELECT DISTINCT cell_line 
+    FROM '{data_url}' 
+    ORDER BY cell_line
+    """
+    
+    result = conn.execute(query).fetchall()
+    return [row[0] for row in result]
+
+# Initialize database connection and get dataset info
 try:
-    # Try to load Parquet first (much faster), fallback to CSV if needed
-    if os.path.exists(DATA_PATH):
-        df = load_data_parquet(DATA_PATH)
-        
-        # Show success with dataset statistics
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("📊 Total Records", f"{len(df):,}")
-        with col2:
-            st.metric("🧬 Genes", f"{df['gene_symbol'].nunique():,}")
-        with col3:
-            st.metric("💊 Drugs", f"{df['drug_id'].nunique():,}")
-        with col4:
-            st.metric("🧪 Cell Lines", f"{df['cell_line'].nunique()}")
-            
-    else:
-        st.warning("⚠️ Parquet file not found, falling back to CSV (this will take longer)...")
-        df = load_data_csv_fallback("real_l1000_data.csv")
+    # Get dataset information from Hugging Face Hub via DuckDB
+    dataset_info = get_dataset_info()
     
-    # Cache gene list for selectbox (fast since data is already sorted)
-    genes_list = sorted(df["gene_symbol"].cat.categories.tolist())
+    # Show success with dataset statistics
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("📊 Total Records", f"{dataset_info['total_records']:,}")
+    with col2:
+        st.metric("🧬 Genes", f"{dataset_info['unique_genes']:,}")
+    with col3:
+        st.metric("💊 Drugs", f"{dataset_info['unique_drugs']:,}")
+    with col4:
+        st.metric("🧪 Cell Lines", f"{dataset_info['unique_cell_lines']}")
     
-    # Skip expensive indexing - use simple boolean filtering instead
-    # Data is already sorted by gene_symbol in Parquet for cache locality
+    # Get gene list for selectbox
+    genes_list = dataset_info['genes_list']
     
 except Exception as e:
-    st.error(f"❌ Failed to load data: {e}")
-    st.info("Please check that the data file exists and try refreshing the page.")
+    st.error(f"❌ Failed to connect to database: {e}")
+    st.info("Please check your internet connection and try refreshing the page.")
     st.stop()
 
 # ----- Sidebar controls -----
@@ -261,29 +286,37 @@ consistency_pct = st.sidebar.slider(
 # Advanced options with better styling
 with st.sidebar.expander("🔬 **Advanced Options**"):
     st.markdown("**Cell Line Filtering** (Optional)")
+    
+    # Get cell lines list using DuckDB
+    all_cell_lines = get_cell_lines()
+    
     selected_cls = st.multiselect(
         "Restrict analysis to specific cell lines:",
-        sorted(df["cell_line"].unique().tolist()),
+        all_cell_lines,
         help="Leave empty to analyze all cell lines. Select specific ones to focus your analysis."
     )
     
     if selected_cls:
         st.success(f"✅ Analysis restricted to {len(selected_cls)} cell line(s)")
     else:
-        st.info(f"ℹ️ Analyzing all {df['cell_line'].nunique()} cell lines")
-
-if selected_cls:
-    df = df[df["cell_line"].isin(selected_cls)]
+        st.info(f"ℹ️ Analyzing all {dataset_info['unique_cell_lines']} cell lines")
 
 # ----- Query: gene-first, then thresholds -----
-# Use fast boolean filtering (data pre-sorted by gene in Parquet)
-df_gene = df[df["gene_symbol"] == gene].copy()
+# Use DuckDB for memory-efficient querying
+progress_text = st.empty()
+progress_text.markdown("🔄 **Querying gene data from remote database...**")
+
+with st.spinner("Fetching drug-gene interactions..."):
+    # Get gene data using DuckDB (only loads relevant data into memory)
+    df_gene = query_gene_data(gene, selected_cls)
+
+progress_text.empty()
 
 if df_gene.empty:
-    st.info("Selected gene not found in the dataset.")
+    st.info("Selected gene not found in the dataset or no data for selected cell lines.")
     st.stop()
 
-# apply p-value filter first
+# Apply filters and compute results efficiently
 df_gene["significant"] = df_gene["pvalue"] <= pval_thresh
 
 if direction == "Upregulated":
@@ -291,7 +324,7 @@ if direction == "Upregulated":
 else:
     df_gene["passes"] = (df_gene["log2fc"] <= -log2fc_thresh) & df_gene["significant"]
 
-# compute per-drug consistency with better progress indication
+# Compute per-drug consistency
 progress_text = st.empty()
 progress_text.markdown("🔄 **Computing drug statistics...**")
 
