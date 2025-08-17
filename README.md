@@ -21,9 +21,10 @@ DrugTargetFinder is a powerful web application that enables researchers to disco
 - Professional data tables with gradient highlighting
 
 ### ⚡ **High Performance**
-- Optimized Parquet data format for 5x faster loading
-- Efficient memory usage with categorical data types
+- DuckDB-powered remote queries with zero memory loading
+- Direct connection to Hugging Face Hub dataset
 - Real-time search across 15.9M drug-gene interactions
+- Eliminates memory crashes and enables concurrent usage
 
 ### 🔬 **Comprehensive Data**
 - **15.9M** drug-gene interaction records
@@ -78,20 +79,24 @@ Visit the live application: [DrugTargetFinder on Streamlit Cloud](https://your-a
 
 ### **Data Pipeline**
 ```
-L1000 Data → Parquet Optimization → Categorical Encoding → Real-time Filtering
+L1000 Data → Hugging Face Hub → DuckDB Remote Queries → Real-time Results
 ```
 
 ### **Performance Optimizations**
-- **Memory Efficient**: Categorical dtypes, float32 precision
-- **Fast Loading**: Chunked processing, Parquet format
+- **Zero Memory Loading**: DuckDB queries remote data without local storage
+- **Cloud-Native**: Direct Hugging Face Hub integration
 - **Smart Caching**: Streamlit's @st.cache_data for instant reloads
-- **Responsive UI**: Progress indicators, background processing
+- **Scalable Architecture**: Handles concurrent users without crashes
 
 ### **Key Files**
-- `drug_target_finder.py` - Main Streamlit application
-- `real_l1000_data.parquet` - Optimized dataset (151MB)
-- `requirements.txt` - Python dependencies
-- `convert_to_parquet.py` - Data optimization script
+- `drug_target_finder.py` - Main Streamlit application with DuckDB integration
+- `requirements.txt` - Python dependencies (includes duckdb)
+- `.claude.md` - Development documentation
+
+### **Remote Data Source**
+- **Hugging Face Hub**: [melsaied1/drug-finder](https://huggingface.co/datasets/melsaied1/drug-finder)
+- **Direct URL**: `https://huggingface.co/datasets/melsaied1/drug-finder/resolve/main/real_l1000_data.parquet`
+- **Size**: 151MB Parquet file (never downloaded locally)
 
 ## Data Format
 
