@@ -2,7 +2,7 @@
 
 **Gene-Centric Drug Discovery Platform**
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://your-app-url.streamlit.app)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://drug-target-finder.streamlit.app)
 
 ## Overview
 
@@ -35,13 +35,13 @@ DrugTargetFinder is a powerful web application that enables researchers to disco
 ## Quick Start
 
 ### 🚀 **Online Access**
-Visit the live application: [DrugTargetFinder on Streamlit Cloud](https://your-app-url.streamlit.app)
+Visit the live application: [DrugTargetFinder on Streamlit Cloud](https://drug-target-finder.streamlit.app)
 
 ### 💻 **Local Installation**
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/drug_analysis.git
+   git clone https://github.com/M-Elsaied/drug_analysis.git
    cd drug_analysis
    ```
 
