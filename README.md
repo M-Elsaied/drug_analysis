@@ -94,12 +94,14 @@ drug_analysis/
 ├── drug_target_finder.py    # Main Streamlit application
 ├── requirements.txt         # Python dependencies  
 ├── LICENSE                  # MIT License
-├── data/                   # Data files (gitignored)
-│   └── real_l1000_data.parquet
+├── data/                   # Example data and documentation
+│   ├── example_dataset.csv  # Lightweight demo dataset (318 KB)
+│   └── README.md            # Data documentation
 ├── scripts/                # Development utilities
+│   ├── create_example_data.py
 │   ├── convert_to_parquet.py
 │   └── transform_real_data.py
-└── archive/                # Test/demo files (gitignored)
+└── archive/                # Archive files (gitignored)
 ```
 
 ### **Remote Data Source**

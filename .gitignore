@@ -36,9 +36,14 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Data files (keep Parquet, exclude large CSV)
+# Large data files (exclude from repo)
 data/real_l1000_data.csv
+data/real_l1000_data.parquet
+*.parquet
 archive/
+
+# Include example dataset
+!data/example_dataset.csv
 
 # Output directories
 output_zips/

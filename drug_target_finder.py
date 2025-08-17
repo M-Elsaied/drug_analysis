@@ -4,7 +4,6 @@
 # Main application for discovering drugs that affect specific target genes
 import math
 import os
-import time
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -51,32 +50,6 @@ with st.expander("🎯 What does this tool do?", expanded=False):
 def get_duckdb_connection():
     """Initialize DuckDB connection - cached as a resource"""
     return duckdb.connect()
-
-def execute_query_with_retry(conn, query, max_retries=3, base_delay=2):
-    """Execute DuckDB query with exponential backoff retry logic"""
-    for attempt in range(max_retries):
-        try:
-            result = conn.execute(query).fetchdf()
-            return result
-        except Exception as e:
-            error_msg = str(e).lower()
-            
-            # Check if it's a rate limiting error
-            if "429" in error_msg or "rate limit" in error_msg or "too many requests" in error_msg:
-                if attempt < max_retries - 1:
-                    delay = base_delay * (2 ** attempt)  # Exponential backoff
-                    st.warning(f"⏳ Rate limit detected. Retrying in {delay} seconds... (Attempt {attempt + 1}/{max_retries})")
-                    time.sleep(delay)
-                    continue
-                else:
-                    st.error("❌ **Rate limit exceeded.** Please wait a few minutes and refresh the page.")
-                    raise e
-            else:
-                # For other errors, don't retry
-                st.error(f"❌ **Database Error:** {str(e)}")
-                raise e
-    
-    return None
 
 @st.cache_data(show_spinner=False)
 def get_dataset_info():
@@ -130,23 +103,17 @@ def get_dataset_info():
             FROM '{data_url}'
             """
             
-            # Use retry logic for queries
-            try:
-                stats_df = execute_query_with_retry(conn, stats_query)
-                stats = stats_df.iloc[0] if not stats_df.empty else None
-                
-                # Get gene list
-                genes_query = f"""
-                SELECT DISTINCT gene_symbol 
-                FROM '{data_url}' 
-                ORDER BY gene_symbol
-                """
-                
-                genes_df = execute_query_with_retry(conn, genes_query)
-                genes_list = genes_df['gene_symbol'].tolist() if not genes_df.empty else []
-            except Exception as e:
-                st.error("Failed to connect to database. Please refresh the page.")
-                st.stop()
+            stats = conn.execute(stats_query).fetchone()
+            
+            # Get gene list
+            genes_query = f"""
+            SELECT DISTINCT gene_symbol 
+            FROM '{data_url}' 
+            ORDER BY gene_symbol
+            """
+            
+            genes_result = conn.execute(genes_query).fetchall()
+            genes_list = [row[0] for row in genes_result]
             
             # Clear progress indicators after a moment
             time.sleep(0.3)
@@ -185,13 +152,10 @@ def query_gene_data(gene: str, selected_cell_lines=None):
     ORDER BY drug_id, cell_line
     """
     
-    # Execute query with retry logic
-    try:
-        result = execute_query_with_retry(conn, query)
-        return result
-    except Exception as e:
-        st.error("❌ Failed to fetch gene data. Please try again in a few minutes.")
-        return pd.DataFrame()  # Return empty DataFrame on failure
+    # Execute query and return as DataFrame
+    result = conn.execute(query).fetchdf()
+    
+    return result
 
 @st.cache_data(show_spinner=False)
 def get_cell_lines():
@@ -206,12 +170,8 @@ def get_cell_lines():
     ORDER BY cell_line
     """
     
-    try:
-        result_df = execute_query_with_retry(conn, query)
-        return result_df['cell_line'].tolist() if not result_df.empty else []
-    except Exception as e:
-        st.error("❌ Failed to fetch cell lines. Using default.")
-        return []
+    result = conn.execute(query).fetchall()
+    return [row[0] for row in result]
 
 # Initialize database connection and get dataset info
 try:
@@ -233,22 +193,8 @@ try:
     genes_list = dataset_info['genes_list']
     
 except Exception as e:
-    st.error("🚫 **Service Temporarily Unavailable**")
-    st.warning("""
-    **The DrugTargetFinder service is experiencing high traffic or rate limiting from the data provider.**
-    
-    **What's happening:**
-    - Hugging Face Hub is temporarily limiting requests
-    - Too many users are accessing the service simultaneously
-    
-    **Please try:**
-    - ⏳ Wait 5-10 minutes and refresh the page
-    - 🔄 Clear your browser cache
-    - 📧 Contact support if the issue persists
-    
-    **This is a temporary issue and will resolve automatically.**
-    """)
-    st.info("💡 **Tip:** The service works best during off-peak hours (early morning or late evening UTC).")
+    st.error(f"❌ Failed to connect to database: {e}")
+    st.info("Please check your internet connection and try refreshing the page.")
     st.stop()
 
 # ----- Sidebar controls -----
