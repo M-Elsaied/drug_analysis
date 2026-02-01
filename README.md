@@ -1,8 +1,19 @@
+# 🧬 Drug Analysis Platform
+
+**Gene-Centric Drug Discovery Tools**
+
+## Applications
+
+| App | Description | Link |
+|-----|-------------|------|
+| 🧬 DrugTargetFinder | Find drugs that affect specific target genes | [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://drug-target-finder.streamlit.app) |
+| ⚡ ExtremeHitsFinder | Discover the most extreme drug-gene interactions | [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://extreme-hits-finder.streamlit.app) |
+
+---
+
 # 🧬 DrugTargetFinder
 
 **Gene-Centric Drug Discovery Platform**
-
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://drug-target-finder.streamlit.app)
 
 ## Overview
 
@@ -91,8 +102,9 @@ L1000 Data → Hugging Face Hub → DuckDB Remote Queries → Real-time Results
 ### **Project Structure**
 ```
 drug_analysis/
-├── drug_target_finder.py    # Main Streamlit application
-├── requirements.txt         # Python dependencies  
+├── drug_target_finder.py    # Gene-centric drug discovery app
+├── extreme_hits_finder.py   # Extreme effect magnitude finder
+├── requirements.txt         # Python dependencies
 ├── LICENSE                  # MIT License
 ├── data/                   # Example data and documentation
 │   ├── example_dataset.csv  # Lightweight demo dataset (318 KB)
@@ -144,3 +156,51 @@ Built on L1000 Connectivity Map Data
 ---
 
 **Built with ❤️ using Streamlit | Powered by L1000 Connectivity Map Data**
+
+---
+
+# ⚡ ExtremeHitsFinder
+
+**Drug Effect Magnitude Discovery Platform**
+
+## Overview
+
+ExtremeHitsFinder identifies the most potent drug-gene interactions across the entire L1000 dataset. Unlike DrugTargetFinder (which focuses on a specific gene), this tool finds drug-gene pairs with the highest absolute effect magnitude, regardless of the specific target.
+
+## Features
+
+### 🔥 **Effect Magnitude Ranking**
+- Find top N drug-gene interactions by |log2FC|
+- Filter by direction (upregulated, downregulated, or both)
+- Adjustable significance and effect thresholds
+
+### 📊 **Visual Analysis**
+- Horizontal bar chart of top 20 extreme hits
+- Color-coded by direction (green=up, red=down)
+- Gradient-styled results table
+
+### ⚡ **Fast Queries**
+- DuckDB-powered remote queries
+- Same zero-memory architecture as DrugTargetFinder
+- Real-time filtering across 15.9M interactions
+
+## Usage
+
+### 🚀 **Online Access**
+Visit: [ExtremeHitsFinder on Streamlit Cloud](https://extreme-hits-finder.streamlit.app)
+
+### 💻 **Local Run**
+```bash
+streamlit run extreme_hits_finder.py
+```
+
+### 🔧 **Search Parameters**
+- **Top N Results**: Number of extreme hits to return (10-500)
+- **Min |log2FC|**: Minimum effect magnitude (0.5-5.0)
+- **P-value Threshold**: Maximum significance level (0.001-0.20)
+- **Direction**: Upregulated, Downregulated, or Both
+- **Cell Lines**: Optional filter to specific cancer cell lines
+
+### 📥 **Exports**
+- CSV file with all results
+- TXT summary report
